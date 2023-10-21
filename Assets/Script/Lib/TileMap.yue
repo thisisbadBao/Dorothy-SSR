@@ -1,0 +1,44 @@
+_ENV = Dorothy!
+import "json"
+
+export default class TileMap
+	new: (filename, tileSet)=>
+		mapStr = Content\load filename
+		mapJSON = json.load mapStr
+		@layers = {}
+		@allMaps = mapJSON.maps
+		@curTileSet = mapJSON.tileSets["0"]
+		@tileSize = @curTileSet.tileSize
+		@curTileSetImage = tileSet
+		@currentMap = with @allMaps["Map_1"]
+			@curMapLayers = .layers
+			@mapWidth = .mapWidth
+			@mapHeight = .mapHeight
+			@mapCanvasWidth = .width
+			@mapCanvasHeight = .height
+			@tileSize = .tileSize
+
+		@tilemap = with Node!
+			.scaleX = .scaleY = 6
+			.x = .y = -@tileSize * @mapHeight * .scaleX / 2
+			\addTo Director.entry
+
+	renderTileMap: ()=>
+		for layer in *@curMapLayers
+			print "Layer name: " .. layer.name .. ", opacity: " .. layer.opacity
+			@layers[layer.name] = with Node!
+				\addTo @tilemap
+			for tileIndex, tile in pairs layer.tiles
+				tilePos = {}
+				for substr in string.gmatch(tileIndex, "([^-]+)")
+					table.insert(tilePos, substr)
+				tilePosX = tonumber(tilePos[1]) * @tileSize
+				tilePosY = -tonumber(tilePos[2]) * @tileSize + @tileSize * @mapHeight
+				tileRectX = tile.x * @tileSize
+				tileRectY = tile.y * @tileSize
+				@layers[layer.name]\addChild with Sprite @curTileSetImage
+					.anchor = Vec2 0, 0
+					.filter = "Point"
+					.textureRect = Rect tileRectX, tileRectY+0.01, @tileSize, @tileSize
+					.x = tilePosX
+					.y = tilePosY
